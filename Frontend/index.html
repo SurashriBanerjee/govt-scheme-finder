@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Scheme Setu</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
+  
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <style>
+    /* CSS Variables based on your exact palette */
+    :root {
+      --khadi-white: #F7F5F0;
+      --indigo-night: #1E2A4F;
+      --peacock-teal: #15706A;
+      --sindoor-vermilion: #C1452E;
+      --marigold: #F0A23A;
+      --charcoal-ink: #2B2B28;
+      
+      --font-display: 'Space Grotesk', sans-serif;
+      --font-body: 'Inter', sans-serif;
+      --font-data: 'IBM Plex Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Emulate a mobile device constraint for desktop viewing */
+    body {
+      background-color: #E5E5E5;
+      font-family: var(--font-body);
+      color: var(--charcoal-ink);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 414px; /* Standard large mobile width */
+      background-color: var(--khadi-white);
+      position: relative;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    /* --- Typography --- */
+    h1, h2, h3, .app-title {
+      font-family: var(--font-display);
+      color: var(--indigo-night);
+      text-transform: uppercase;
+      letter-spacing: -0.5px;
+    }
+
+    .data-text {
+      font-family: var(--font-data);
+      font-weight: 700;
+    }
+
+    /* --- Shared UI Components --- */
+    header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid rgba(30, 42, 79, 0.1);
+    }
+    
+    .app-title {
+      font-size: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .screen {
+      display: none;
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      padding-bottom: 80px; /* Space for bottom nav */
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .btn-primary {
+      background-color: var(--marigold);
+      color: var(--indigo-night);
+      font-family: var(--font-body);
+      font-weight: 600;
+      border: 2px solid var(--indigo-night);
+      padding: 12px 20px;
+      width: 100%;
+      text-align: center;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      box-shadow: 3px 3px 0px var(--indigo-night);
+      transition: all 0.1s ease;
+    }
+    .btn-primary:active {
+      box-shadow: 0px 0px 0px var(--indigo-night);
+      transform: translate(3px, 3px);
+    }
+
+    .btn-small {
+      padding: 8px 12px;
+      font-size: 0.875rem;
+    }
+
+    /* --- Home Screen Specifics --- */
+    .hero-text {
+      font-size: 1.1rem;
+      line-height: 1.4;
+      margin-bottom: 24px;
+      color: var(--charcoal-ink);
+    }
+
+    .search-bar {
+      display: flex;
+      background: #fff;
+      border: 2px solid var(--indigo-night);
+      border-radius: 4px;
+      padding: 12px;
+      margin-bottom: 24px;
+    }
+    .search-bar input {
+      border: none;
+      outline: none;
+      width: 100%;
+      font-family: var(--font-body);
+      font-size: 1rem;
+    }
+
+    .category-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    
+    .category-card {
+      background: #fff;
+      border: 2px solid var(--indigo-night);
+      border-radius: 8px;
+      padding: 16px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s ease;
+    }
+    .category-card:active { transform: scale(0.98); }
+    
+    .category-card.scholarship .icon { color: var(--peacock-teal); }
+    .category-card.healthcare .icon { color: var(--sindoor-vermilion); }
+    
+    .category-card h3 {
+      font-size: 1rem;
+      text-transform: none;
+      font-family: var(--font-body);
+      font-weight: 600;
+    }
+
+    /* --- Ticket Stub Design (Results Screen) --- */
+    .ticket {
+      display: flex;
+      background: #fff;
+      border: 2px solid var(--indigo-night);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 4px 4px 0 rgba(30, 42, 79, 0.1);
+    }
+
+    .ticket-main {
+      flex: 1;
+      padding: 16px;
+      border-right: 3px dashed var(--indigo-night);
+      position: relative;
+    }
+
+    /* Cutouts for the ticket perforation */
+    .ticket-main::before, .ticket-main::after {
+      content: '';
+      position: absolute;
+      right: -10px; /* Centers exactly over the border */
+      width: 16px;
+      height: 16px;
+      background: var(--khadi-white);
+      border: 2px solid var(--indigo-night);
+      border-radius: 50%;
+      z-index: 2;
+    }
+    .ticket-main::before { top: -10px; border-bottom-color: transparent; border-left-color: transparent; transform: rotate(-45deg); }
+    .ticket-main::after { bottom: -10px; border-top-color: transparent; border-left-color: transparent; transform: rotate(45deg); }
+
+    .stamp {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 12px;
+    }
+    .stamp.scholarship {
+      background: rgba(21, 112, 106, 0.1);
+      color: var(--peacock-teal);
+      border: 1px solid var(--peacock-teal);
+    }
+    .stamp.healthcare {
+      background: rgba(193, 69, 46, 0.1);
+      color: var(--sindoor-vermilion);
+      border: 1px solid var(--sindoor-vermilion);
+    }
+
+    .ticket-title {
+      font-size: 1.1rem;
+      font-family: var(--font-body);
+      font-weight: 600;
+      color: var(--indigo-night);
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .ticket-summary {
+      font-size: 0.85rem;
+      color: var(--charcoal-ink);
+      opacity: 0.8;
+      margin-bottom: 12px;
+    }
+
+    .match-tag {
+      font-size: 0.75rem;
+      background: #EFEFEF;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    .ticket-stub {
+      width: 110px;
+      padding: 16px 8px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      background: #FAFAFA;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .stub-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--indigo-night);
+      opacity: 0.6;
+      margin-bottom: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .stub-value {
+      font-size: 1.1rem;
+      color: var(--indigo-night);
+      margin-bottom: 12px;
+      line-height: 1.2;
+    }
+
+    /* --- Bottom Navigation --- */
+    .bottom-nav {
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: #fff;
+      display: flex;
+      justify-content: space-between;
+      padding: 12px 24px;
+      border-top: 2px solid rgba(30, 42, 79, 0.1);
+      z-index: 10;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--indigo-night);
+      opacity: 0.5;
+      text-decoration: none;
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .nav-item.active {
+      opacity: 1;
+      color: var(--marigold);
+    }
+    .nav-item.active i {
+      color: var(--indigo-night);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <header>
+      <div class="app-title">
+        <i class="ph-bold ph-bank"></i>
+        SCHEME SETU
+      </div>
+      <div class="profile-pic" style="width: 32px; height: 32px; background: var(--indigo-night); border-radius: 50%; border: 2px solid var(--marigold);"></div>
+    </header>
+
+    <div id="home-screen" class="screen active">
+      <p class="hero-text">Find every government scheme you qualify for — scholarships and healthcare — in 2 minutes.</p>
+      
+      <div class="search-bar">
+        <i class="ph ph-magnifying-glass" style="margin-right: 12px; font-size: 1.2rem; color: #666;"></i>
+        <input type="text" placeholder="Search schemes directly...">
+      </div>
+
+      <div class="category-cards">
+        <div class="category-card scholarship" onclick="switchScreen('results-screen')">
+          <i class="ph-fill ph-graduation-cap icon" style="font-size: 2rem;"></i>
+          <h3>Student Scholarships</h3>
+          <p style="font-size: 0.8rem; color: #666;">Pre-matric, Merit & Education funds</p>
+        </div>
+        <div class="category-card healthcare" onclick="switchScreen('results-screen')">
+          <i class="ph-fill ph-heartbeat icon" style="font-size: 2rem;"></i>
+          <h3>Healthcare Schemes</h3>
+          <p style="font-size: 0.8rem; color: #666;">Insurance & Maternity care</p>
+        </div>
+      </div>
+      
+      <h2 style="font-size: 1rem; margin-bottom: 16px;">Quick Profile Check</h2>
+      <button class="btn-primary" onclick="alert('Proceeding to step-by-step form...')">Start Assessment</button>
+    </div>
+
+    <div id="results-screen" class="screen">
+      <h2 style="margin-bottom: 8px;">Your Matches</h2>
+      <p style="font-size: 0.9rem; margin-bottom: 20px;">Based on your profile, we've identified 3 entitlements ready for review.</p>
+      
+      <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+        <span style="background: var(--indigo-night); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">All</span>
+        <span style="border: 1px solid var(--indigo-night); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Scholarships</span>
+        <span style="border: 1px solid var(--indigo-night); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Healthcare</span>
+      </div>
+
+      <div class="ticket">
+        <div class="ticket-main">
+          <div class="stamp scholarship">
+            <i class="ph-bold ph-certificate"></i> Scholarship
+          </div>
+          <div class="ticket-title">National Means-cum-Merit Scholarship (NMMS)</div>
+          <div class="ticket-summary">Financial aid for meritorious students of economically weaker sections.</div>
+          <div class="match-tag">Class 9-12 • Income < ₹3.5L</div>
+        </div>
+        <div class="ticket-stub">
+          <div class="stub-label">Benefit</div>
+          <div class="stub-value data-text">₹12,000<br><span style="font-size: 0.75rem">/YEAR</span></div>
+          <button class="btn-primary btn-small">Apply</button>
+        </div>
+      </div>
+
+      <div class="ticket">
+        <div class="ticket-main">
+          <div class="stamp healthcare">
+            <i class="ph-bold ph-heart-straight"></i> Healthcare
+          </div>
+          <div class="ticket-title">Ayushman Bharat (PM-JAY)</div>
+          <div class="ticket-summary">Universal health coverage for hospitalization expenses.</div>
+          <div class="match-tag">Age 70+ (Universal)</div>
+        </div>
+        <div class="ticket-stub">
+          <div class="stub-label">Coverage</div>
+          <div class="stub-value data-text">₹5 LAKH<br><span style="font-size: 0.75rem">/YEAR</span></div>
+          <button class="btn-primary btn-small">View</button>
+        </div>
+      </div>
+      
+      <div class="ticket">
+        <div class="ticket-main">
+          <div class="stamp healthcare">
+            <i class="ph-bold ph-heart-straight"></i> Healthcare
+          </div>
+          <div class="ticket-title">Pradhan Mantri Matru Vandana Yojana</div>
+          <div class="ticket-summary">Maternity cash assistance for pregnant and lactating mothers.</div>
+          <div class="match-tag">Women 19+ • First Child</div>
+        </div>
+        <div class="ticket-stub">
+          <div class="stub-label">Cash Grant</div>
+          <div class="stub-value data-text">₹5,000</div>
+          <button class="btn-primary btn-small">Apply</button>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="switchScreen('home-screen', this)">
+        <i class="ph-fill ph-house" style="font-size: 1.5rem;"></i>
+        Home
+      </div>
+      <div class="nav-item" onclick="switchScreen('results-screen', this)">
+        <i class="ph-fill ph-ticket" style="font-size: 1.5rem;"></i>
+        Matches
+      </div>
+      <div class="nav-item">
+        <i class="ph-fill ph-chat-circle-dots" style="font-size: 1.5rem;"></i>
+        Chat
+      </div>
+      <div class="nav-item">
+        <i class="ph-fill ph-user" style="font-size: 1.5rem;"></i>
+        Profile
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Simple script to toggle between screens for the prototype
+    function switchScreen(screenId, navElement = null) {
+      // Hide all screens
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+      
+      // Show targeted screen
+      document.getElementById(screenId).classList.add('active');
+
+      // Update Nav state
+      if(navElement) {
+        document.querySelectorAll('.nav-item').forEach(nav => {
+          nav.classList.remove('active');
+        });
+        navElement.classList.add('active');
+      } else if (screenId === 'results-screen') {
+          // Manual nav override if navigated via card click instead of bottom nav
+          document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+          document.querySelectorAll('.nav-item')[1].classList.add('active');
+      }
+      
+      // Scroll to top
+      document.querySelector('.app-container').scrollTo(0,0);
+    }
+  </script>
+</body>
+</html>
