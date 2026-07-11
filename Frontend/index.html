@@ -1,464 +1,621 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Scheme Setu</title>
-  
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@600;700&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@700&display=swap" rel="stylesheet">
-  
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scheme Setu | Discover Government Schemes</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { background-color: #f8fafc; font-family: 'Plus Jakarta Sans', sans-serif; }
 
-  <style>
-    /* CSS Variables based on your exact palette */
-    :root {
-      --khadi-white: #F7F5F0;
-      --indigo-night: #1E2A4F;
-      --peacock-teal: #15706A;
-      --sindoor-vermilion: #C1452E;
-      --marigold: #F0A23A;
-      --charcoal-ink: #2B2B28;
-      
-      --font-display: 'Space Grotesk', sans-serif;
-      --font-body: 'Inter', sans-serif;
-      --font-data: 'IBM Plex Mono', monospace;
-    }
+        .screen  { display: none; }
+        .screen.active { display: block; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+        .glass-card {
+            background: rgba(255,255,255,0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.6);
+        }
 
-    /* Emulate a mobile device constraint for desktop viewing */
-    body {
-      background-color: #E5E5E5;
-      font-family: var(--font-body);
-      color: var(--charcoal-ink);
-      display: flex;
-      justify-content: center;
-      min-height: 100vh;
-      -webkit-font-smoothing: antialiased;
-    }
+        /* Spinner */
+        .loader {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%; width: 20px; height: 20px;
+            animation: spin 0.8s linear infinite; display: none;
+        }
+        .express-loader {
+            border: 2px solid rgba(79,70,229,0.2);
+            border-top: 2px solid #4f46e5;
+            border-radius: 50%; width: 16px; height: 16px;
+            animation: spin 0.8s linear infinite; display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-    .app-container {
-      width: 100%;
-      max-width: 414px; /* Standard large mobile width */
-      background-color: var(--khadi-white);
-      position: relative;
-      overflow-x: hidden;
-      display: flex;
-      flex-direction: column;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
+        /* Chat panel */
+        #chat-panel {
+            position: fixed; top: 0; right: -420px;
+            width: 400px; height: 100dvh;
+            background: #fff;
+            box-shadow: -4px 0 30px rgba(0,0,0,0.12);
+            transition: right 0.3s ease;
+            z-index: 200;
+            display: flex; flex-direction: column;
+        }
+        #chat-panel.open { right: 0; }
 
-    /* --- Typography --- */
-    h1, h2, h3, .app-title {
-      font-family: var(--font-display);
-      color: var(--indigo-night);
-      text-transform: uppercase;
-      letter-spacing: -0.5px;
-    }
+        #chat-messages {
+            flex: 1; overflow-y: auto;
+            padding: 16px; display: flex;
+            flex-direction: column; gap: 12px;
+        }
+        .msg-user {
+            align-self: flex-end; background: #4f46e5; color: #fff;
+            padding: 10px 14px; border-radius: 18px 18px 4px 18px;
+            max-width: 80%; font-size: 14px; line-height: 1.5;
+        }
+        .msg-ai {
+            align-self: flex-start; background: #f1f5f9; color: #1e293b;
+            padding: 10px 14px; border-radius: 18px 18px 18px 4px;
+            max-width: 80%; font-size: 14px; line-height: 1.5;
+        }
+        .msg-ai.typing { color: #94a3b8; font-style: italic; }
 
-    .data-text {
-      font-family: var(--font-data);
-      font-weight: 700;
-    }
+        /* FAB */
+        #chat-fab {
+            position: fixed; bottom: 28px; right: 28px; z-index: 150;
+            background: linear-gradient(135deg, #4f46e5, #0d9488);
+            color: #fff; width: 56px; height: 56px; border-radius: 50%;
+            color: #fff; width: 56px; height: 56px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 6px 24px rgba(79,70,229,0.45);
+            cursor: pointer; border: none; transition: transform 0.2s;
+        }
+        #chat-fab:hover { transform: scale(1.08); }
 
-    /* --- Shared UI Components --- */
-    header {
-      padding: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 2px solid rgba(30, 42, 79, 0.1);
-    }
-    
-    .app-title {
-      font-size: 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
+        /* Overlay */
+        #chat-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.3); z-index: 199;
+        }
+        #chat-overlay.active { display: block; }
 
-    .screen {
-      display: none;
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      padding-bottom: 80px; /* Space for bottom nav */
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    .btn-primary {
-      background-color: var(--marigold);
-      color: var(--indigo-night);
-      font-family: var(--font-body);
-      font-weight: 600;
-      border: 2px solid var(--indigo-night);
-      padding: 12px 20px;
-      width: 100%;
-      text-align: center;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1rem;
-      box-shadow: 3px 3px 0px var(--indigo-night);
-      transition: all 0.1s ease;
-    }
-    .btn-primary:active {
-      box-shadow: 0px 0px 0px var(--indigo-night);
-      transform: translate(3px, 3px);
-    }
-
-    .btn-small {
-      padding: 8px 12px;
-      font-size: 0.875rem;
-    }
-
-    /* --- Home Screen Specifics --- */
-    .hero-text {
-      font-size: 1.1rem;
-      line-height: 1.4;
-      margin-bottom: 24px;
-      color: var(--charcoal-ink);
-    }
-
-    .search-bar {
-      display: flex;
-      background: #fff;
-      border: 2px solid var(--indigo-night);
-      border-radius: 4px;
-      padding: 12px;
-      margin-bottom: 24px;
-    }
-    .search-bar input {
-      border: none;
-      outline: none;
-      width: 100%;
-      font-family: var(--font-body);
-      font-size: 1rem;
-    }
-
-    .category-cards {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 32px;
-    }
-    
-    .category-card {
-      background: #fff;
-      border: 2px solid var(--indigo-night);
-      border-radius: 8px;
-      padding: 16px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      transition: transform 0.2s ease;
-    }
-    .category-card:active { transform: scale(0.98); }
-    
-    .category-card.scholarship .icon { color: var(--peacock-teal); }
-    .category-card.healthcare .icon { color: var(--sindoor-vermilion); }
-    
-    .category-card h3 {
-      font-size: 1rem;
-      text-transform: none;
-      font-family: var(--font-body);
-      font-weight: 600;
-    }
-
-    /* --- Ticket Stub Design (Results Screen) --- */
-    .ticket {
-      display: flex;
-      background: #fff;
-      border: 2px solid var(--indigo-night);
-      border-radius: 8px;
-      margin-bottom: 20px;
-      position: relative;
-      box-shadow: 4px 4px 0 rgba(30, 42, 79, 0.1);
-    }
-
-    .ticket-main {
-      flex: 1;
-      padding: 16px;
-      border-right: 3px dashed var(--indigo-night);
-      position: relative;
-    }
-
-    /* Cutouts for the ticket perforation */
-    .ticket-main::before, .ticket-main::after {
-      content: '';
-      position: absolute;
-      right: -10px; /* Centers exactly over the border */
-      width: 16px;
-      height: 16px;
-      background: var(--khadi-white);
-      border: 2px solid var(--indigo-night);
-      border-radius: 50%;
-      z-index: 2;
-    }
-    .ticket-main::before { top: -10px; border-bottom-color: transparent; border-left-color: transparent; transform: rotate(-45deg); }
-    .ticket-main::after { bottom: -10px; border-top-color: transparent; border-left-color: transparent; transform: rotate(45deg); }
-
-    .stamp {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      margin-bottom: 12px;
-    }
-    .stamp.scholarship {
-      background: rgba(21, 112, 106, 0.1);
-      color: var(--peacock-teal);
-      border: 1px solid var(--peacock-teal);
-    }
-    .stamp.healthcare {
-      background: rgba(193, 69, 46, 0.1);
-      color: var(--sindoor-vermilion);
-      border: 1px solid var(--sindoor-vermilion);
-    }
-
-    .ticket-title {
-      font-size: 1.1rem;
-      font-family: var(--font-body);
-      font-weight: 600;
-      color: var(--indigo-night);
-      margin-bottom: 8px;
-      line-height: 1.3;
-    }
-
-    .ticket-summary {
-      font-size: 0.85rem;
-      color: var(--charcoal-ink);
-      opacity: 0.8;
-      margin-bottom: 12px;
-    }
-
-    .match-tag {
-      font-size: 0.75rem;
-      background: #EFEFEF;
-      padding: 4px 8px;
-      border-radius: 4px;
-      display: inline-block;
-    }
-
-    .ticket-stub {
-      width: 110px;
-      padding: 16px 8px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      text-align: center;
-      background: #FAFAFA;
-      border-radius: 0 8px 8px 0;
-    }
-
-    .stub-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      color: var(--indigo-night);
-      opacity: 0.6;
-      margin-bottom: 4px;
-      letter-spacing: 0.5px;
-    }
-
-    .stub-value {
-      font-size: 1.1rem;
-      color: var(--indigo-night);
-      margin-bottom: 12px;
-      line-height: 1.2;
-    }
-
-    /* --- Bottom Navigation --- */
-    .bottom-nav {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      background: #fff;
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 24px;
-      border-top: 2px solid rgba(30, 42, 79, 0.1);
-      z-index: 10;
-    }
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      color: var(--indigo-night);
-      opacity: 0.5;
-      text-decoration: none;
-      font-size: 0.75rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-    .nav-item.active {
-      opacity: 1;
-      color: var(--marigold);
-    }
-    .nav-item.active i {
-      color: var(--indigo-night);
-    }
-  </style>
+        /* Field styling */
+        .field-input {
+            width: 100%; padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px; font-size: 14px;
+            font-family: inherit;
+            outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+            background: #fff;
+        }
+        .field-input:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129,140,248,0.25);
+        }
+        .field-label {
+            display: block; font-size: 13px;
+            font-weight: 700; color: #475569; margin-bottom: 6px;
+        }
+    </style>
 </head>
-<body>
+<body class="min-h-screen antialiased text-slate-800">
 
-  <div class="app-container">
-    
-    <header>
-      <div class="app-title">
-        <i class="ph-bold ph-bank"></i>
-        SCHEME SETU
-      </div>
-      <div class="profile-pic" style="width: 32px; height: 32px; background: var(--indigo-night); border-radius: 50%; border: 2px solid var(--marigold);"></div>
-    </header>
-
-    <div id="home-screen" class="screen active">
-      <p class="hero-text">Find every government scheme you qualify for — scholarships and healthcare — in 2 minutes.</p>
-      
-      <div class="search-bar">
-        <i class="ph ph-magnifying-glass" style="margin-right: 12px; font-size: 1.2rem; color: #666;"></i>
-        <input type="text" placeholder="Search schemes directly...">
-      </div>
-
-      <div class="category-cards">
-        <div class="category-card scholarship" onclick="switchScreen('results-screen')">
-          <i class="ph-fill ph-graduation-cap icon" style="font-size: 2rem;"></i>
-          <h3>Student Scholarships</h3>
-          <p style="font-size: 0.8rem; color: #666;">Pre-matric, Merit & Education funds</p>
+<!-- =============================================
+     NAV
+     ============================================= -->
+<nav class="sticky top-0 z-50 glass-card border-b border-slate-100 p-4">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-3 cursor-pointer" onclick="goToLanding()">
+            <div class="bg-gradient-to-br from-indigo-500 to-teal-500 p-2 rounded-xl">
+                <i data-lucide="landmark" class="text-white h-6 w-6"></i>
+            </div>
+            <span class="font-extrabold text-xl tracking-tight text-slate-800">Scheme Setu</span>
         </div>
-        <div class="category-card healthcare" onclick="switchScreen('results-screen')">
-          <i class="ph-fill ph-heartbeat icon" style="font-size: 2rem;"></i>
-          <h3>Healthcare Schemes</h3>
-          <p style="font-size: 0.8rem; color: #666;">Insurance & Maternity care</p>
+        <button onclick="openChat()"
+            style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#4f46e5,#0d9488); color:#fff; font-weight:700; font-size:13px; padding:10px 18px; border-radius:12px; border:none; cursor:pointer; box-shadow:0 2px 12px rgba(79,70,229,0.3);"
+            onmouseover="this.style.opacity='0.9'"
+            onmouseout="this.style.opacity='1'">
+            <i data-lucide="message-circle" style="width:16px; height:16px;"></i>
+            AI Assistant
+        </button>
+    </div>
+</nav>
+
+<main class="max-w-6xl mx-auto px-4 py-12">
+
+    <!-- =============================================
+         LANDING SCREEN
+         ============================================= -->
+    <div id="landing-screen" class="screen active">
+        <div class="text-center mb-10">
+            <h1 class="text-5xl font-extrabold text-slate-900 mb-4">Discover Government Schemes</h1>
+            <p class="text-xl text-slate-500">Select a category, or just describe yourself below.</p>
         </div>
-      </div>
-      
-      <h2 style="font-size: 1rem; margin-bottom: 16px;">Quick Profile Check</h2>
-      <button class="btn-primary" onclick="alert('Proceeding to step-by-step form...')">Start Assessment</button>
+
+        <!-- Disclaimer -->
+        <div class="max-w-2xl mx-auto mb-8 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-2xl p-5 flex gap-3">
+            <i data-lucide="info" class="w-5 h-5 flex-shrink-0 mt-0.5"></i>
+            <p><strong>Disclaimer:</strong> Scheme Setu is an independent informational and awareness platform. We do not represent any government entity, do not process applications, and will never ask for sensitive data, Aadhaar numbers, or fees. All applications must be completed on the official government portal linked from each scheme.</p>
+        </div>
+
+        <!-- Express Match -->
+        <div class="max-w-2xl mx-auto mb-12">
+            <div class="glass-card p-6 rounded-3xl shadow-sm border border-indigo-100">
+                <p class="text-sm font-bold text-indigo-600 mb-1 flex items-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Express Match
+                </p>
+                <p class="text-sm text-slate-500 mb-4">Type one sentence and we'll find matching schemes instantly.</p>
+                <div class="flex gap-2">
+                    <input id="express-input" type="text"
+                        placeholder='e.g. "19-year-old SC female from West Bengal, income 2 lakh, in college"'
+                        style="flex:1; padding:12px; border:1px solid #e2e8f0; border-radius:12px; font-size:14px; outline:none; font-family:inherit;"
+                        onfocus="this.style.borderColor='#818cf8'; this.style.boxShadow='0 0 0 3px rgba(129,140,248,0.25)'"
+                        onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"
+                        onkeydown="if(event.key==='Enter') runExpressMatch()">
+                    <button onclick="runExpressMatch()"
+                        style="background:#4f46e5; color:#fff; padding:0 20px; border-radius:12px; font-weight:700; font-size:14px; border:none; cursor:pointer; display:flex; align-items:center; gap:8px;"
+                        onmouseover="this.style.background='#4338ca'"
+                        onmouseout="this.style.background='#4f46e5'">
+                        <span id="express-btn-text">Go</span>
+                        <div id="express-loader" class="express-loader"></div>
+                    </button>
+                </div>
+                <p id="express-error"   style="font-size:12px; color:#f43f5e; margin-top:8px; display:none;"></p>
+                <p id="express-partial" style="font-size:12px; color:#d97706; margin-top:8px; display:none;"></p>
+            </div>
+        </div>
+
+        <!-- Category cards -->
+        <p class="text-center text-slate-400 text-sm font-semibold tracking-widest uppercase mb-6">or pick a category</p>
+        <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <button onclick="selectCategory('scholarship')"
+                class="glass-card p-10 rounded-3xl shadow-sm text-left border-2 border-transparent"
+                style="transition: all 0.2s;"
+                onmouseover="this.style.boxShadow='0 10px 40px rgba(79,70,229,0.15)'; this.style.borderColor='#c7d2fe'"
+                onmouseout="this.style.boxShadow=''; this.style.borderColor='transparent'">
+                <i data-lucide="graduation-cap" class="w-10 h-10 text-indigo-600 mb-6"></i>
+                <h2 class="text-2xl font-bold mb-2">Scholarships</h2>
+                <p class="text-slate-500">Find financial aid for education.</p>
+            </button>
+            <button onclick="selectCategory('healthcare')"
+                class="glass-card p-10 rounded-3xl shadow-sm text-left border-2 border-transparent"
+                style="transition: all 0.2s;"
+                onmouseover="this.style.boxShadow='0 10px 40px rgba(13,148,136,0.15)'; this.style.borderColor='#99f6e4'"
+                onmouseout="this.style.boxShadow=''; this.style.borderColor='transparent'">
+                <i data-lucide="heart-pulse" class="w-10 h-10 text-teal-600 mb-6"></i>
+                <h2 class="text-2xl font-bold mb-2">Healthcare</h2>
+                <p class="text-slate-500">Find health insurance and medical aid.</p>
+            </button>
+        </div>
     </div>
 
+    <!-- =============================================
+         FORM SCREEN
+         ============================================= -->
+    <div id="form-screen" class="screen max-w-2xl mx-auto">
+        <button onclick="goToLanding()"
+            style="display:flex; align-items:center; gap:8px; color:#64748b; font-weight:700; font-size:14px; background:none; border:none; cursor:pointer; margin-bottom:24px;"
+            onmouseover="this.style.color='#1e293b'"
+            onmouseout="this.style.color='#64748b'">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> Back
+        </button>
+
+        <div style="background:rgba(255,255,255,0.9); border-radius:24px; padding:32px; box-shadow:0 4px 32px rgba(0,0,0,0.08); border:1px solid rgba(255,255,255,0.8);">
+            <h2 id="form-title" style="font-size:22px; font-weight:800; color:#0f172a; margin-bottom:24px;">Enter Details</h2>
+
+            <!-- COMMON FIELDS (always shown) -->
+            <div style="display:flex; flex-direction:column; gap:16px;">
+                <div>
+                    <label class="field-label">Age</label>
+                    <input type="number" id="age" placeholder="e.g. 20" class="field-input" min="1" max="120">
+                </div>
+                <div>
+                    <label class="field-label">Annual Family Income</label>
+                    <select id="income" class="field-input">
+                        <option value="under2.5">Under ₹2.5 Lakhs</option>
+                        <option value="under3.5">Under ₹3.5 Lakhs</option>
+                        <option value="under8">Under ₹8.0 Lakhs</option>
+                        <option value="above8">Above ₹8.0 Lakhs</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">State</label>
+                    <select id="state" class="field-input">
+                        <option value="All India">All India / Other</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                        <option value="Himachal Pradesh">Himachal Pradesh</option>
+                        <option value="Kerala">Kerala</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Odisha">Odisha</option>
+                        <option value="Punjab">Punjab</option>
+                        <option value="Rajasthan">Rajasthan</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="West Bengal">West Bengal</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Gender</label>
+                    <select id="gender" class="field-input">
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Category</label>
+                    <select id="demographicCategory" class="field-input">
+                        <option value="General">General</option>
+                        <option value="SC">SC</option>
+                        <option value="ST">ST</option>
+                        <option value="OBC">OBC</option>
+                        <option value="OBC-NCL">OBC (Non-Creamy Layer)</option>
+                        <option value="EBC">EBC</option>
+                        <option value="DNT">DNT</option>
+                        <option value="Minority">Minority</option>
+                        <option value="Disability">Person with Disability</option>
+                        <option value="Govt Employee">Government Employee</option>
+                        <option value="Worker">Registered Worker</option>
+                    </select>
+                </div>
+
+                <!-- SCHOLARSHIP-SPECIFIC FIELDS -->
+                <div id="scholarship-fields" style="display:none; flex-direction:column; gap:16px;">
+                    <div>
+                        <label class="field-label">Education Level</label>
+                        <select id="educationLevel" class="field-input">
+                            <option value="School">School (Class 9–12)</option>
+                            <option value="Undergraduate">Undergraduate</option>
+                            <option value="Postgraduate">Postgraduate</option>
+                            <option value="Any">Any / Not Sure</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Percentage / CGPA <span style="font-weight:400; color:#94a3b8;">(optional)</span></label>
+                        <input type="number" id="cgpa" placeholder="e.g. 78" class="field-input" min="0" max="100" step="0.1">
+                    </div>
+                </div>
+
+                <!-- HEALTHCARE-SPECIFIC FIELDS -->
+                <div id="healthcare-fields" style="display:none; flex-direction:column; gap:16px;">
+                    <div>
+                        <label class="field-label">Medical Need / Type</label>
+                        <select id="medicalNeed" class="field-input">
+                            <option value="General">General Healthcare</option>
+                            <option value="Maternity">Maternity</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="field-label">Do you have a BPL Card?</label>
+                        <select id="bplStatus" class="field-input">
+                            <option value="no">No</option>
+                            <option value="yes">Yes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- SUBMIT -->
+                <button id="submit-btn" onclick="submitForm()"
+                    style="width:100%; background:#0f172a; color:#fff; font-weight:700; font-size:15px; padding:16px; border-radius:12px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; margin-top:4px; transition:background 0.2s;"
+                    onmouseover="this.style.background='#334155'"
+                    onmouseout="this.style.background='#0f172a'">
+                    <span id="btn-text">Check Eligibility</span>
+                    <div id="btn-loader" class="loader"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================
+         RESULTS SCREEN
+         ============================================= -->
     <div id="results-screen" class="screen">
-      <h2 style="margin-bottom: 8px;">Your Matches</h2>
-      <p style="font-size: 0.9rem; margin-bottom: 20px;">Based on your profile, we've identified 3 entitlements ready for review.</p>
-      
-      <div style="display: flex; gap: 8px; margin-bottom: 24px;">
-        <span style="background: var(--indigo-night); color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600;">All</span>
-        <span style="border: 1px solid var(--indigo-night); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Scholarships</span>
-        <span style="border: 1px solid var(--indigo-night); padding: 6px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500;">Healthcare</span>
-      </div>
-
-      <div class="ticket">
-        <div class="ticket-main">
-          <div class="stamp scholarship">
-            <i class="ph-bold ph-certificate"></i> Scholarship
-          </div>
-          <div class="ticket-title">National Means-cum-Merit Scholarship (NMMS)</div>
-          <div class="ticket-summary">Financial aid for meritorious students of economically weaker sections.</div>
-          <div class="match-tag">Class 9-12 • Income < ₹3.5L</div>
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:12px;">
+            <button onclick="startOver()"
+                style="display:flex; align-items:center; gap:8px; color:#64748b; font-weight:700; font-size:14px; background:none; border:none; cursor:pointer;"
+                onmouseover="this.style.color='#1e293b'"
+                onmouseout="this.style.color='#64748b'">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i> Start Over
+            </button>
+            <button onclick="openChat()"
+                style="display:flex; align-items:center; gap:8px; background:#eef2ff; color:#4f46e5; font-weight:700; font-size:13px; padding:10px 16px; border-radius:12px; border:none; cursor:pointer;"
+                onmouseover="this.style.background='#e0e7ff'"
+                onmouseout="this.style.background='#eef2ff'">
+                <i data-lucide="message-circle" class="w-4 h-4"></i> Ask about these schemes
+            </button>
         </div>
-        <div class="ticket-stub">
-          <div class="stub-label">Benefit</div>
-          <div class="stub-value data-text">₹12,000<br><span style="font-size: 0.75rem">/YEAR</span></div>
-          <button class="btn-primary btn-small">Apply</button>
-        </div>
-      </div>
-
-      <div class="ticket">
-        <div class="ticket-main">
-          <div class="stamp healthcare">
-            <i class="ph-bold ph-heart-straight"></i> Healthcare
-          </div>
-          <div class="ticket-title">Ayushman Bharat (PM-JAY)</div>
-          <div class="ticket-summary">Universal health coverage for hospitalization expenses.</div>
-          <div class="match-tag">Age 70+ (Universal)</div>
-        </div>
-        <div class="ticket-stub">
-          <div class="stub-label">Coverage</div>
-          <div class="stub-value data-text">₹5 LAKH<br><span style="font-size: 0.75rem">/YEAR</span></div>
-          <button class="btn-primary btn-small">View</button>
-        </div>
-      </div>
-      
-      <div class="ticket">
-        <div class="ticket-main">
-          <div class="stamp healthcare">
-            <i class="ph-bold ph-heart-straight"></i> Healthcare
-          </div>
-          <div class="ticket-title">Pradhan Mantri Matru Vandana Yojana</div>
-          <div class="ticket-summary">Maternity cash assistance for pregnant and lactating mothers.</div>
-          <div class="match-tag">Women 19+ • First Child</div>
-        </div>
-        <div class="ticket-stub">
-          <div class="stub-label">Cash Grant</div>
-          <div class="stub-value data-text">₹5,000</div>
-          <button class="btn-primary btn-small">Apply</button>
-        </div>
-      </div>
-
+        <h2 id="results-count" style="font-size:28px; font-weight:800; color:#0f172a; margin-bottom:32px;"></h2>
+        <div id="schemes-container" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(280px, 1fr)); gap:24px;"></div>
     </div>
 
-    <div class="bottom-nav">
-      <div class="nav-item active" onclick="switchScreen('home-screen', this)">
-        <i class="ph-fill ph-house" style="font-size: 1.5rem;"></i>
-        Home
-      </div>
-      <div class="nav-item" onclick="switchScreen('results-screen', this)">
-        <i class="ph-fill ph-ticket" style="font-size: 1.5rem;"></i>
-        Matches
-      </div>
-      <div class="nav-item">
-        <i class="ph-fill ph-chat-circle-dots" style="font-size: 1.5rem;"></i>
-        Chat
-      </div>
-      <div class="nav-item">
-        <i class="ph-fill ph-user" style="font-size: 1.5rem;"></i>
-        Profile
-      </div>
+</main>
+
+<!-- =============================================
+     CHAT OVERLAY
+     ============================================= -->
+<div id="chat-overlay" onclick="closeChat()"></div>
+
+<!-- =============================================
+     CHAT PANEL
+     ============================================= -->
+<div id="chat-panel">
+    <!-- Header -->
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; background:linear-gradient(135deg,#4f46e5,#0d9488); flex-shrink:0;">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div style="background:rgba(255,255,255,0.2); border-radius:10px; padding:8px;">
+                <i data-lucide="bot" style="color:#fff; width:18px; height:18px;"></i>
+            </div>
+            <div>
+                <p style="font-weight:700; color:#fff; font-size:14px; margin:0;">Scheme Assistant</p>
+                <p style="color:rgba(255,255,255,0.7); font-size:12px; margin:0;">Ask about your matched schemes</p>
+            </div>
+        </div>
+        <button onclick="closeChat()" style="background:none; border:none; cursor:pointer; color:rgba(255,255,255,0.7); display:flex; align-items:center;">
+            <i data-lucide="x" style="width:20px; height:20px;"></i>
+        </button>
     </div>
 
-  </div>
+    <!-- Messages -->
+    <div id="chat-messages">
+        <div class="msg-ai">👋 Hi! I can answer questions about the schemes matched to your profile. What would you like to know?</div>
+    </div>
 
-  <script>
-    // Simple script to toggle between screens for the prototype
-    function switchScreen(screenId, navElement = null) {
-      // Hide all screens
-      document.querySelectorAll('.screen').forEach(screen => {
-        screen.classList.remove('active');
-      });
-      
-      // Show targeted screen
-      document.getElementById(screenId).classList.add('active');
+    <!-- Input -->
+    <div style="padding:16px; border-top:1px solid #f1f5f9; display:flex; gap:10px; flex-shrink:0;">
+        <input id="chat-input" type="text" placeholder="Ask a question…"
+            style="flex:1; padding:12px 14px; border:1px solid #e2e8f0; border-radius:12px; font-size:14px; outline:none; font-family:inherit;"
+            onfocus="this.style.borderColor='#818cf8'; this.style.boxShadow='0 0 0 3px rgba(129,140,248,0.25)'"
+            onblur="this.style.borderColor='#e2e8f0'; this.style.boxShadow='none'"
+            onkeydown="if(event.key==='Enter') sendChatMessage()">
+        <button onclick="sendChatMessage()"
+            style="background:#4f46e5; color:#fff; width:46px; border-radius:12px; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;"
+            onmouseover="this.style.background='#4338ca'"
+            onmouseout="this.style.background='#4f46e5'">
+            <i data-lucide="send" style="width:16px; height:16px;"></i>
+        </button>
+    </div>
+</div>
 
-      // Update Nav state
-      if(navElement) {
-        document.querySelectorAll('.nav-item').forEach(nav => {
-          nav.classList.remove('active');
-        });
-        navElement.classList.add('active');
-      } else if (screenId === 'results-screen') {
-          // Manual nav override if navigated via card click instead of bottom nav
-          document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-          document.querySelectorAll('.nav-item')[1].classList.add('active');
-      }
-      
-      // Scroll to top
-      document.querySelector('.app-container').scrollTo(0,0);
+<!-- FAB -->
+<button id="chat-fab" onclick="openChat()" aria-label="Open chat assistant">
+    <i data-lucide="message-circle" class="w-6 h-6"></i>
+</button>
+
+<!-- =============================================
+     JAVASCRIPT
+     ============================================= -->
+<script>
+lucide.createIcons();
+
+let currentMatchedSchemes = [];
+
+// ---- Screen management ----
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.getElementById('chat-fab').style.display = 'flex';
+    window.scrollTo(0, 0);
+}
+
+function goToLanding() { showScreen('landing-screen'); }
+
+function startOver() {
+    // Reset ALL form fields explicitly (no form.reset() — avoids hidden-input edge cases)
+    document.getElementById('age').value              = '';
+    document.getElementById('income').selectedIndex  = 0;
+    document.getElementById('state').selectedIndex   = 0;
+    document.getElementById('gender').selectedIndex  = 0;
+    document.getElementById('demographicCategory').selectedIndex = 0;
+    document.getElementById('educationLevel').selectedIndex      = 0;
+    document.getElementById('cgpa').value            = '';
+    document.getElementById('medicalNeed').selectedIndex         = 0;
+    document.getElementById('bplStatus').selectedIndex           = 0;
+
+    // Hide both dynamic sections
+    document.getElementById('scholarship-fields').style.display  = 'none';
+    document.getElementById('healthcare-fields').style.display   = 'none';
+
+    currentMatchedSchemes = [];
+    showScreen('landing-screen');
+}
+
+// ---- Category selection ----
+function selectCategory(type) {
+    // Reset dynamic sections
+    document.getElementById('scholarship-fields').style.display = 'none';
+    document.getElementById('healthcare-fields').style.display  = 'none';
+
+    // Show the right one
+    if (type === 'scholarship') {
+        document.getElementById('scholarship-fields').style.display = 'flex';
+        document.getElementById('form-title').textContent = 'Scholarship Details';
+    } else {
+        document.getElementById('healthcare-fields').style.display = 'flex';
+        document.getElementById('form-title').textContent = 'Healthcare Details';
     }
-  </script>
+
+    // Store type in a JS variable (no hidden input needed)
+    window._schemeType = type;
+    showScreen('form-screen');
+}
+
+// ---- Standard form submit ----
+async function submitForm() {
+    const age = document.getElementById('age').value;
+    if (!age) { alert('Please enter your age.'); return; }
+
+    const btn    = document.getElementById('submit-btn');
+    const loader = document.getElementById('btn-loader');
+    const btnTxt = document.getElementById('btn-text');
+    btn.disabled = true; btnTxt.textContent = 'Searching…'; loader.style.display = 'block';
+
+    const payload = {
+        age               : parseInt(age),
+        income            : document.getElementById('income').value,
+        schemeType        : window._schemeType,
+        state             : document.getElementById('state').value,
+        gender            : document.getElementById('gender').value,
+        demographicCategory: document.getElementById('demographicCategory').value,
+        educationLevel    : document.getElementById('educationLevel').value || null,
+        cgpa              : document.getElementById('cgpa').value            || null,
+        bplStatus         : document.getElementById('bplStatus').value       || null,
+        medicalNeed       : document.getElementById('medicalNeed').value     || null
+    };
+
+    try {
+        const res  = await fetch('http://localhost:5000/api/match', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify(payload)
+        });
+        const data = await res.json();
+        currentMatchedSchemes = data;
+        renderResults(data);
+    } catch (e) {
+        alert('Server error — please make sure the backend is running (node server.js).');
+    } finally {
+        btn.disabled = false; btnTxt.textContent = 'Check Eligibility'; loader.style.display = 'none';
+    }
+}
+
+// ---- Express Match ----
+async function runExpressMatch() {
+    const input   = document.getElementById('express-input');
+    const btnTxt  = document.getElementById('express-btn-text');
+    const loader  = document.getElementById('express-loader');
+    const errBox  = document.getElementById('express-error');
+    const partial = document.getElementById('express-partial');
+    const text    = input.value.trim();
+    if (!text) return;
+
+    errBox.style.display = 'none';
+    partial.style.display = 'none';
+    btnTxt.textContent = '';
+    loader.style.display = 'block';
+
+    try {
+        const res  = await fetch('http://localhost:5000/api/extract-profile', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ rawText: text })
+        });
+        const data = await res.json();
+
+        if (res.status === 206) {
+            partial.textContent = `🤔 ${data.message} Please complete the form below.`;
+            partial.style.display = 'block';
+            if (data.profile?.schemeType) selectCategory(data.profile.schemeType);
+        } else if (data.status === 'complete') {
+            currentMatchedSchemes = data.results;
+            renderResults(data.results);
+        } else {
+            errBox.textContent = data.error || 'Something went wrong — please try rephrasing.';
+            errBox.style.display = 'block';
+        }
+    } catch (e) {
+        errBox.textContent = 'Server error — please make sure the backend is running.';
+        errBox.style.display = 'block';
+    } finally {
+        btnTxt.textContent = 'Go';
+        loader.style.display = 'none';
+    }
+}
+
+// ---- Render results ----
+function renderResults(schemes) {
+    const container = document.getElementById('schemes-container');
+    const count     = document.getElementById('results-count');
+    count.textContent = `We found ${schemes.length} scheme(s)!`;
+
+    if (schemes.length === 0) {
+        container.innerHTML = `<p style="color:#64748b; grid-column:1/-1;">No schemes matched your profile. Try adjusting your details.</p>`;
+    } else {
+        container.innerHTML = schemes.map(s => `
+            <div style="background:rgba(255,255,255,0.85); backdrop-filter:blur(12px); border:1px solid rgba(255,255,255,0.6); border-radius:20px; padding:24px; display:flex; flex-direction:column; justify-content:space-between; box-shadow:0 2px 16px rgba(0,0,0,0.06);">
+                <div>
+                    <h3 style="font-size:15px; font-weight:800; color:#0f172a; margin:0 0 8px;">${s.scheme_name}</h3>
+                    <p style="font-size:13px; color:#475569; margin:0 0 12px; line-height:1.5;">${s.description}</p>
+                    ${s.benefits?.length ? `
+                        <ul style="font-size:13px; color:#334155; margin:0 0 12px; padding-left:20px; line-height:1.8;">
+                            ${s.benefits.map(b => `<li>${b}</li>`).join('')}
+                        </ul>` : ''}
+                    ${s.whyYouQualify ? `
+                        <div style="background:#f0fdf4; border-radius:10px; padding:10px 12px; margin-bottom:8px;">
+                            <p style="font-size:12px; color:#15803d; margin:0; line-height:1.5;"><strong>Why you qualify:</strong> ${s.whyYouQualify}</p>
+                        </div>` : ''}
+                    ${s.note ? `
+                        <div style="background:#eef2ff; border-radius:10px; padding:10px 12px; margin-bottom:12px;">
+                            <p style="font-size:12px; color:#4338ca; font-style:italic; margin:0; line-height:1.5;"><strong>Note:</strong> ${s.note}</p>
+                        </div>` : ''}
+                </div>
+                <a href="${s.official_link}" target="_blank" rel="noopener noreferrer"
+                    style="display:block; text-align:center; background:#4f46e5; color:#fff; padding:12px; border-radius:12px; font-weight:700; font-size:14px; text-decoration:none; margin-top:8px; transition:background 0.2s;"
+                    onmouseover="this.style.background='#4338ca'"
+                    onmouseout="this.style.background='#4f46e5'">Apply Now</a>
+            </div>`).join('');
+    }
+    showScreen('results-screen');
+    lucide.createIcons();
+}
+
+// ---- Chat ----
+function openChat()  {
+    document.getElementById('chat-panel').classList.add('open');
+    document.getElementById('chat-overlay').classList.add('active');
+    // If no schemes loaded yet, add a helpful nudge (only once)
+    if (currentMatchedSchemes.length === 0 && !window._chatNudgeSent) {
+        window._chatNudgeSent = true;
+        appendMsg("I don't have any matched schemes to work with yet. Please use the quiz or Express Match first, then come back and I can answer specific questions about your results! 😊", 'ai');
+    }
+    setTimeout(() => document.getElementById('chat-input').focus(), 310);
+}
+function closeChat() {
+    document.getElementById('chat-panel').classList.remove('open');
+    document.getElementById('chat-overlay').classList.remove('active');
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById('chat-input');
+    const text  = input.value.trim();
+    if (!text) return;
+    input.value = '';
+
+    appendMsg(text, 'user');
+    const typingId = appendMsg('Thinking…', 'ai typing');
+
+    try {
+        const res  = await fetch('http://localhost:5000/api/chat', {
+            method : 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body   : JSON.stringify({ message: text, context: currentMatchedSchemes })
+        });
+        const data = await res.json();
+        removeMsg(typingId);
+        appendMsg(data.reply || data.error || 'Sorry, I couldn\'t get a response.', 'ai');
+    } catch (e) {
+        removeMsg(typingId);
+        appendMsg('Server error — make sure the backend is running.', 'ai');
+    }
+}
+
+function appendMsg(text, type) {
+    const box = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    const id  = 'msg-' + Date.now() + Math.random();
+    div.id = id;
+    div.className = type.includes('user') ? 'msg-user' : (type.includes('typing') ? 'msg-ai typing' : 'msg-ai');
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+    return id;
+}
+function removeMsg(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+</script>
 </body>
 </html>
