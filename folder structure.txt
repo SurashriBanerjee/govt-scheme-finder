@@ -1,0 +1,13 @@
+govt-schemes-finder/
+│
+├── Frontend/
+│   └── index.html             # Your complete UI, CSS styles, and frontend fetch logic
+│
+├── Backend/
+│   ├── node_modules/          # Auto-generated when you run 'npm install'
+│   ├── package.json           # Lists your dependencies (express, cors)
+│   ├── package-lock.json      # Auto-generated lock file for dependencies
+│   ├── schemes.json           # Your JSON database of the 24 schemes
+│   └── server.js              # Your Express server and matching algorithm
+│
+└── .gitignore                 # Tells GitHub not to upload the heavy node_modules folder
