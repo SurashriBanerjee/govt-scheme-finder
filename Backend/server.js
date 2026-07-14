@@ -61,7 +61,7 @@ async function callGemini(promptText) {
     throw new Error('GEMINI_API_KEY is not set in .env — please add it and restart the server.');
   }
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
     method : 'POST',
