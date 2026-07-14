@@ -108,20 +108,11 @@
      NAV
      ============================================= -->
 <nav class="sticky top-0 z-50 glass-card border-b border-slate-100 p-4">
-    <div class="max-w-6xl mx-auto flex items-center justify-between">
-        <div class="flex items-center gap-3 cursor-pointer" onclick="goToLanding()">
-            <div class="bg-gradient-to-br from-indigo-500 to-teal-500 p-2 rounded-xl">
-                <i data-lucide="landmark" class="text-white h-6 w-6"></i>
-            </div>
-            <span class="font-extrabold text-xl tracking-tight text-slate-800">Scheme Setu</span>
+    <div class="max-w-6xl mx-auto flex items-center gap-3 cursor-pointer" onclick="goToLanding()">
+        <div class="bg-gradient-to-br from-indigo-500 to-teal-500 p-2 rounded-xl">
+            <i data-lucide="landmark" class="text-white h-6 w-6"></i>
         </div>
-        <button onclick="openChat()"
-            style="display:flex; align-items:center; gap:8px; background:linear-gradient(135deg,#4f46e5,#0d9488); color:#fff; font-weight:700; font-size:13px; padding:10px 18px; border-radius:12px; border:none; cursor:pointer; box-shadow:0 2px 12px rgba(79,70,229,0.3);"
-            onmouseover="this.style.opacity='0.9'"
-            onmouseout="this.style.opacity='1'">
-            <i data-lucide="message-circle" style="width:16px; height:16px;"></i>
-            AI Assistant
-        </button>
+        <span class="font-extrabold text-xl tracking-tight text-slate-800">Scheme Setu</span>
     </div>
 </nav>
 
@@ -313,18 +304,12 @@
          RESULTS SCREEN
          ============================================= -->
     <div id="results-screen" class="screen">
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:32px; flex-wrap:wrap; gap:12px;">
+        <div style="display:flex; align-items:center; justify-content:flex-start; margin-bottom:32px; flex-wrap:wrap; gap:12px;">
             <button onclick="startOver()"
                 style="display:flex; align-items:center; gap:8px; color:#64748b; font-weight:700; font-size:14px; background:none; border:none; cursor:pointer;"
                 onmouseover="this.style.color='#1e293b'"
                 onmouseout="this.style.color='#64748b'">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i> Start Over
-            </button>
-            <button onclick="openChat()"
-                style="display:flex; align-items:center; gap:8px; background:#eef2ff; color:#4f46e5; font-weight:700; font-size:13px; padding:10px 16px; border-radius:12px; border:none; cursor:pointer;"
-                onmouseover="this.style.background='#e0e7ff'"
-                onmouseout="this.style.background='#eef2ff'">
-                <i data-lucide="message-circle" class="w-4 h-4"></i> Ask about these schemes
             </button>
         </div>
         <h2 id="results-count" style="font-size:28px; font-weight:800; color:#0f172a; margin-bottom:32px;"></h2>
